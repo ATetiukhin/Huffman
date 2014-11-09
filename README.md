@@ -2,11 +2,11 @@ Huffman
 =======
 
 Problem statement
------------------------
+-----------------
 The program performing the two-pass compression with Huffman algorithm.
 
 Command-line options
----------------------------
+--------------------
 <table>
   <tbody>
     <tr>

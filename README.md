@@ -2,28 +2,30 @@ Huffman
 =======
 
 Problem statement
------------------
+-----------------------
 The program performing the two-pass compression with Huffman algorithm.
 
 Command-line options
-------------------------
-<table border="1" cellspacing="1" cellpadding="1" width="100%">
- <tr>
-  <td>-c</td>
-  <td>compress</td>
- </tr>
- <tr>
-  <td>-f</td>
-  <td>uncompress</td>
- </tr>
- <tr>
-  <td>-f, --file &lt;path&gt;</td>
-  <td>the name of the input file</td>
- </tr>
- <tr>
-  <td>-o, --output &lt;path&gt;</td>
-  <td>the name of the output file</td>
- </tr>
+---------------------------
+<table>
+  <tbody>
+    <tr>
+      <td>-c</td>
+      <td>compress</td>
+    </tr>
+    <tr>
+      <td>-f</td>
+      <td>uncompress</td>
+    </tr>
+    <tr>
+      <td>-f, --file &lt;path> </td>
+      <td>the name of the input file</td>
+    </tr>
+    <tr>
+      <td>-o, --output &lt;path></td>
+      <td>the name of the output file</td>
+    </tr>
+  </tbody>
 </table>
 
 The value of the parameter (if any) specified through the gap.
@@ -40,5 +42,5 @@ to store auxiliary data (e.g., tables) and nothing more.
     15678
     482
 
-### Restrictions ###
+### Restrictions
 The maximum size of the input file is 5MB. The limit on the run time to 5 seconds.

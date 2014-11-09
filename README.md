@@ -7,7 +7,7 @@ The program performing the two-pass compression with Huffman algorithm.
 
 Command-line options
 ------------------------
-<table border="1" cellspacing="1" cellpadding="1" width="25%">
+<table border="1" cellspacing="1" cellpadding="1" width="100%">
  <tr>
   <td>-c</td>
   <td>compress</td>
@@ -35,8 +35,6 @@ to store auxiliary data (e.g., tables) and nothing more.
     15678
     6172
     482
-
-
     $ huffman -u -f result.bin -o myfile_new.txt
     6172
     15678

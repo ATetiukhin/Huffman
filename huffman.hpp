@@ -5,18 +5,6 @@
 #include <list>
 #include <map>
 
-class InvalidateInputFile : public std::exception {
-    virtual const char *what() const throw() {
-        return "invalidate input file";
-    }
-};
-
-class InvalidateOutputFile : public std::exception {
-    virtual const char *what() const throw() {
-        return "invalidate output file";
-    }
-};
-
 struct INode {
     const int f;
 
@@ -56,29 +44,47 @@ struct NodeCmp {
 
 class Huffman {
 public:
-    Huffman() {
-    }
+    Huffman();
 
-    ~Huffman() {
-    }
+    ~Huffman();
 
-    void encode_file(const char *input, const char *output);
+    void file_encode(const char *input, const char *output);
 
-    void decode_file(const char *input, const char *output);
+    void file_decode(const char *input, const char *output);
 
 private:
     typedef std::vector<char> HuffmanCodeType;
     typedef std::map<char, HuffmanCodeType> HuffmanTableType;
-    HuffmanTableType huffman_table;
+
     std::vector<char> text_buffer;
 
-    int read_file_encode(const char *input);
+    const int unique_symbols;
+    std::vector<int> frequencies;
 
-    int write_file_encode(const char *output);
+    // the original size of the data
+    int input_data;
 
-    INode *build_tree();
+    // the resulting size of the data
+    int output_data;
 
-    void build_table(const INode *node, const HuffmanCodeType &prefix);
+    // the size necessary for storing auxiliary data
+    int supporting_data;
+
+    void print_data() const;
+
+    void frequency_count();
+
+    INode *build_tree(int &size_tree) const;
+
+    void build_table(const INode *node, const HuffmanCodeType &prefix, HuffmanTableType & huffman_table) const;
+
+    bool read_encode(const char *input);
+
+    void write_encode(const char *output, HuffmanTableType & huffman_table);
+
+    bool read_decode(const char *input);
+
+    void write_decode(const char *output, INode *root);
 
 };
 

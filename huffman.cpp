@@ -8,44 +8,6 @@
 
 typedef unsigned int uint;
 
-/*
-using std::istream;
-using std::ostream;
-
-template<typename T>
-class wrap {
-    T t;
-
-public:
-    wrap() : t() {
-    }
-
-    wrap(T const &t) : t(t) {
-    }
-
-    operator T &() {
-        return t;
-    }
-
-    operator T const &() const {
-        return t;
-    }
-};
-
-template<typename T>
-istream &operator>>(istream &is, wrap<T> &wt) {
-    is.read(reinterpret_cast<char *>(&static_cast<T &>(wt)), sizeof(T));
-    return is;
-}
-
-template<typename T>
-ostream &operator<<(ostream &os, wrap<T> const &wt) {
-    os.write(
-            reinterpret_cast<char const *>(&static_cast<T const &>(wt)),
-            sizeof(T));
-    return os;
-}
-*/
 Huffman::Huffman()
         : unique_symbols(1 << CHAR_BIT),
           frequencies(static_cast<uint>(unique_symbols)),
@@ -100,11 +62,11 @@ void Huffman::build_table(const INode *node, const HuffmanCodeType &prefix, Huff
         huffman_table[lf->c] = prefix;
     } else if (const InternalNode *in = dynamic_cast<const InternalNode *>(node)) {
         HuffmanCodeType leftPrefix = prefix;
-        leftPrefix.push_back(false);
+        leftPrefix.push_back(true);
         build_table(in->left, leftPrefix, huffman_table);
 
         HuffmanCodeType rightPrefix = prefix;
-        rightPrefix.push_back(true);
+        rightPrefix.push_back(false);
         build_table(in->right, rightPrefix, huffman_table);
     }
 }

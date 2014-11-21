@@ -29,9 +29,6 @@ void parse_the_command_line(int argc, char *argv[], int &parameter, char *&input
     if ((strcmp(argv[2], cmd[2]) || strcmp(argv[2], cmd[3])) && (strcmp(argv[4], cmd[4]) || strcmp(argv[4], cmd[5]))) {
         input_file = argv[3];
         output_file = argv[5];
-    } else if ((strcmp(argv[4], cmd[2]) || strcmp(argv[4], cmd[3])) && (strcmp(argv[2], cmd[4]) || strcmp(argv[2], cmd[5]))) {
-        input_file = argv[5];
-        output_file = argv[3];
     } else {
         throw std::runtime_error("invalidate arguments");
     }

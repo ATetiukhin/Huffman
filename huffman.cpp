@@ -7,10 +7,11 @@
 #include "huffman.hpp"
 
 typedef unsigned int uint;
+typedef unsigned char uchar;
 
 Huffman::Huffman()
         : unique_symbols(1 << CHAR_BIT),
-          frequencies(static_cast<uint>(unique_symbols)),
+          frequencies(unique_symbols),
           input_data(0),
           output_data(0),
           supporting_data(0) {
@@ -80,12 +81,11 @@ bool Huffman::read_encode(const char *input) {
     // get size of file
     infile.seekg(0, infile.end);
     input_data = static_cast<int>(infile.tellg());
-    infile.seekg(0);
-
     if (!input_data) {
         infile.close();
         return false;
     }
+    infile.seekg(0);
 
     // allocate memory for file content
     text_buffer.resize(static_cast<uint>(input_data));
@@ -103,11 +103,10 @@ void Huffman::write_encode(const char *output, HuffmanTableType &huffman_table) 
         throw std::runtime_error("invalidate output file");
     }
 
-    short count = static_cast<short>(huffman_table.size());
-    outfile.write((char *) &count, sizeof(short));
-    supporting_data += sizeof(short);
-
     // write frequencies array
+    short count = static_cast<short>(huffman_table.size());
+    outfile.write((char *)&count, sizeof(short));
+
     for (int idx = 0; idx < unique_symbols; ++idx) {
         if (frequencies[idx]) {
             outfile.write((char *) &idx, sizeof(char));
@@ -115,18 +114,28 @@ void Huffman::write_encode(const char *output, HuffmanTableType &huffman_table) 
             supporting_data += 1;
         }
     }
-    supporting_data = supporting_data * (sizeof(int) + sizeof(char));
-    output_data += supporting_data;
+
+    supporting_data = sizeof(short) + supporting_data * (sizeof(int) + sizeof(char));
 
     // write text
-    size_t size = 0;
+    std::vector<bool> huffman_text;
+    huffman_text.reserve(6 * 8 * 1024 * 1024);
+
     HuffmanTableType::iterator huffman_iter;
     for (std::vector<char>::iterator itr = text_buffer.begin(), end = text_buffer.end(); itr != end; ++itr) {
         huffman_iter = huffman_table.find(*itr);
-        size = huffman_iter->second.size();
-        outfile.write(huffman_iter->second.data(), size * sizeof(char));
-        output_data += size;
+        for (bool bit : huffman_iter->second) {
+            huffman_text.push_back(bit);
+        }
     }
+
+    int size = static_cast<int>(huffman_text.size());
+    outfile.write((char*)&size, sizeof(int));
+
+    outfile.write((char*)&huffman_text[0], huffman_text.size());
+
+    // supporting_data + S()
+    output_data = supporting_data + sizeof(int) + size;
     outfile.close();
 }
 
@@ -175,7 +184,6 @@ void Huffman::write_decode(const char *output, INode *root) {
     if (!outfile.is_open()) {
         throw std::runtime_error("invalidate output file");
     }
-    root;
     outfile.close();
 }
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <unordered_map>
 
 struct INode {
     const int f;
@@ -53,8 +54,8 @@ public:
     void file_decode(const char *input, const char *output);
 
 private:
-    typedef std::vector<char> HuffmanCodeType;
-    typedef std::map<char, HuffmanCodeType> HuffmanTableType;
+    typedef std::vector<bool> HuffmanCodeType;
+    typedef std::unordered_map<char, HuffmanCodeType> HuffmanTableType;
 
     std::vector<char> text_buffer;
 

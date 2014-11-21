@@ -5,8 +5,8 @@ set(PROJECT_NAME HUFFMAN)
 set(APP_NAME huffman)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
-set(VERSION_PATCH 2)
+set(VERSION_MINOR 2)
+set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 message(STATUS "VERSION: " ${VERSION})
 
@@ -36,7 +36,7 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "/EHsc /W4 /nologo /Od /Ob0" CACHE STRING "" FORCE)
 
     #MSVC filters
-    source_group("Source Files\\MAIN" FILES ${MAIN_FILES})
+    source_group("Source Files\\Main" FILES ${MAIN_FILES})
     source_group("Source Files\\Huffman" FILES ${HUFFMAN_FILES})
 elseif (CMAKE_COMPILER_IS_GNUCXX)
     # Setting directory

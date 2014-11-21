@@ -5,7 +5,7 @@ set(PROJECT_NAME HUFFMAN)
 set(APP_NAME huffman)
 
 set(VERSION_MAJOR 0)
-set(VERSION_MINOR 2)
+set(VERSION_MINOR 3)
 set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 message(STATUS "VERSION: " ${VERSION})
@@ -32,7 +32,7 @@ endif(WIN32 OR APPLE)
 
 # Project settings
 if (MSVC)
-    add_definitions(/D_CONSOLE /D_MBCS)
+    add_definitions(/D_CONSOLE /D_MBCS /wd4512)
     set(CMAKE_CXX_FLAGS "/EHsc /W4 /nologo /Od /Ob0" CACHE STRING "" FORCE)
 
     #MSVC filters
@@ -61,3 +61,5 @@ add_executable(${APP_NAME} ${ALL_FILES})
 if (MSVC)
     set_target_properties(${APP_NAME} PROPERTIES LINK_FLAGS " /DYNAMICBASE:NO /FIXED")
 endif (MSVC)
+
+#-------------------------------------------------------------------------------------------

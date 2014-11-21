@@ -22,24 +22,22 @@
 void parse_the_command_line(int argc, char *argv[], int &parameter, char *&input_file, char *&output_file) {
     char const *const cmd[] = {"-c", "-u", "-f", "--file", "-o", "--output"};
 
-    if (argc != 6) {
-        throw std::runtime_error("invalidate arguments");
+    if (argc == 6) {
+        if ((strcmp(argv[2], cmd[2]) || strcmp(argv[2], cmd[3])) && (strcmp(argv[4], cmd[4]) || strcmp(argv[4], cmd[5]))) {
+            input_file = argv[3];
+            output_file = argv[5];
+            if (!strcmp(argv[1], cmd[0])) {
+                parameter = 1;
+            } else if (!strcmp(argv[1], cmd[1])) {
+                parameter = 2;
+            } else {
+                throw std::runtime_error("invalidate arguments");
+            }
+            return;
+        }
     }
 
-    if ((strcmp(argv[2], cmd[2]) || strcmp(argv[2], cmd[3])) && (strcmp(argv[4], cmd[4]) || strcmp(argv[4], cmd[5]))) {
-        input_file = argv[3];
-        output_file = argv[5];
-    } else {
-        throw std::runtime_error("invalidate arguments");
-    }
-
-    if (!strcmp(argv[1], cmd[0])) {
-        parameter = 1;
-    } else if (!strcmp(argv[1], cmd[1])) {
-        parameter = 2;
-    } else {
-        throw std::runtime_error("invalidate arguments");
-    }
+    throw std::runtime_error("invalidate arguments");
 }
 
 int main(int argc, char *argv[]) {
@@ -55,17 +53,14 @@ int main(int argc, char *argv[]) {
         char *output_file = nullptr;
         parse_the_command_line(argc, argv, parameter, input_file, output_file);
 
-        Huffman compression;
-        switch (parameter) {
-            case 1:
-                compression.file_encode(input_file, output_file);
-                break;
-            case 2:
-                compression.file_decode(input_file, output_file);
-                break;
-            default:
-                break;
+        Huffman compression(input_file, output_file);
+        if (parameter) {
+            compression.file_encode();
+        } else {
+            compression.file_decode();
         }
+        compression.print_data();
+
     } catch (std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }

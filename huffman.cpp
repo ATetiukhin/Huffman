@@ -1,23 +1,33 @@
 #include <iostream>  // std::cout
-#include <fstream>   // std::ifstream
-#include <iterator>  // std::ostream_iterator
-#include <algorithm> // std::copy_n
-#include <climits>   // CHAR_BIT
+#include <fstream>   // std::ifstream std::ofstream
 #include <queue>
+#include <bitset>
 #include "huffman.hpp"
 
-typedef unsigned int uint;
-typedef unsigned char uchar;
+typedef unsigned long ulong_t;
+typedef unsigned int uint_t;
+typedef unsigned short ushort_t;
+typedef unsigned char uchar_t;
 
-Huffman::Huffman()
-        : unique_symbols(1 << CHAR_BIT),
-          frequencies(unique_symbols),
-          input_data(0),
-          output_data(0),
-          supporting_data(0) {
+template<class S>
+inline void get_size_of_file(S &filename, size_t &size_data) {
+    filename.seekg(0, filename.end);
+    size_data = static_cast<size_t>(filename.tellg());
+    filename.seekg(0);
+}
+
+Huffman::Huffman(const char *input, const char *output) :
+        infile(input, std::ifstream::binary | std::ifstream::out),
+        outfile(output, std::ofstream::binary | std::ofstream::out),
+        frequencies(1 << CHAR_BIT),
+        input_data(0),
+        output_data(0),
+        supporting_data(0) {
 }
 
 Huffman::~Huffman() {
+    infile.close();
+    outfile.close();
 }
 
 void Huffman::print_data() const {
@@ -26,21 +36,13 @@ void Huffman::print_data() const {
     std::cout << supporting_data << std::endl;
 }
 
-void Huffman::frequency_count() {
-    // build frequency array
-    for (std::vector<char>::iterator it = text_buffer.begin(), end = text_buffer.end(); it != end; ++it) {
-        ++frequencies[*it];
-    }
-}
-
-INode *Huffman::build_tree(int &size_tree) const {
+bool Huffman::build_tree(INode *&root) const {
     std::priority_queue<INode *, std::vector<INode *>, NodeCmp> trees;
-    for (int i = 0; i < unique_symbols; ++i) {
+
+    for (int i = 0, size = frequencies.size(); i < size; ++i) {
         if (frequencies[i] != 0)
             trees.push(new LeafNode(frequencies[i], static_cast<char>(i)));
     }
-
-    size_tree = trees.size();
 
     INode *right = nullptr;
     INode *left = nullptr;
@@ -55,7 +57,9 @@ INode *Huffman::build_tree(int &size_tree) const {
         parent = new InternalNode(right, left);
         trees.push(parent);
     }
-    return trees.top();
+
+    root = trees.top();
+    return trees.size() == 1;
 }
 
 void Huffman::build_table(const INode *node, const HuffmanCodeType &prefix, HuffmanTableType &huffman_table) const {
@@ -72,130 +76,139 @@ void Huffman::build_table(const INode *node, const HuffmanCodeType &prefix, Huff
     }
 }
 
-bool Huffman::read_encode(const char *input) {
-    std::ifstream infile(input, std::ifstream::binary | std::ifstream::out);
-    if (!infile.is_open()) {
-        throw std::runtime_error("invalidate input file");
+void Huffman::file_encode() {
+
+    if (!(infile.is_open() && outfile.is_open())) {
+        throw std::runtime_error("invalidate file");
     }
 
-    // get size of file
-    infile.seekg(0, infile.end);
-    input_data = static_cast<int>(infile.tellg());
-    if (!input_data) {
-        infile.close();
-        return false;
-    }
-    infile.seekg(0);
-
-    // allocate memory for file content
-    text_buffer.resize(static_cast<uint>(input_data));
-
-    // read content of infile
-    infile.read(text_buffer.data(), input_data);
-
-    infile.close();
-    return true;
-}
-
-void Huffman::write_encode(const char *output, HuffmanTableType &huffman_table) {
-    std::ofstream outfile(output, std::ofstream::binary | std::ofstream::out);
-    if (!outfile.is_open()) {
-        throw std::runtime_error("invalidate output file");
-    }
-
-    // write frequencies array
-    short count = static_cast<short>(huffman_table.size());
-    outfile.write((char *)&count, sizeof(short));
-
-    for (int idx = 0; idx < unique_symbols; ++idx) {
-        if (frequencies[idx]) {
-            outfile.write((char *) &idx, sizeof(char));
-            outfile.write((char *) &frequencies[idx], sizeof(int));
-            supporting_data += 1;
-        }
-    }
-
-    supporting_data = sizeof(short) + supporting_data * (sizeof(int) + sizeof(char));
-
-    // write text
-    std::vector<bool> huffman_text;
-    huffman_text.reserve(6 * 8 * 1024 * 1024);
-
-    HuffmanTableType::iterator huffman_iter;
-    for (std::vector<char>::iterator itr = text_buffer.begin(), end = text_buffer.end(); itr != end; ++itr) {
-        huffman_iter = huffman_table.find(*itr);
-        for (bool bit : huffman_iter->second) {
-            huffman_text.push_back(bit);
-        }
-    }
-
-    int size = static_cast<int>(huffman_text.size());
-    outfile.write((char*)&size, sizeof(int));
-
-    outfile.write((char*)&huffman_text[0], huffman_text.size());
-
-    // supporting_data + S()
-    output_data = supporting_data + sizeof(int) + size;
-    outfile.close();
-}
-
-void Huffman::file_encode(const char *input, const char *output) {
-    if (read_encode(input)) {
-        frequency_count();
-        int size_tree = 0;
-        INode *root = build_tree(size_tree);
-
+    if (read_encode(infile)) {
+        INode *root = nullptr;
         HuffmanTableType huffman_table;
-        if (size_tree == 1) {
+
+        if (build_tree(root)) {
             build_table(root, HuffmanCodeType(1), huffman_table);
         } else {
             build_table(root, HuffmanCodeType(0), huffman_table);
         }
         delete root;
 
-        write_encode(output, huffman_table);
+        write_encode(infile, outfile, huffman_table);
     }
-
-    print_data();
 }
 
-bool Huffman::read_decode(const char *input) {
-    std::ifstream infile(input, std::ifstream::binary | std::ifstream::out);
-    if (!infile.is_open()) {
-        throw std::runtime_error("invalidate input file");
-    }
-
-    // get size of file
-    infile.seekg(0, infile.end);
-    input_data = static_cast<int>(infile.tellg());
-    infile.seekg(0);
-
+bool Huffman::read_encode(std::ifstream &infile) {
+    get_size_of_file(infile, input_data);
     if (!input_data) {
-        infile.close();
         return false;
     }
 
-    infile.close();
+    // read content of input file
+    char ch = 0;
+    for (size_t i = 0; i < input_data; ++i) {
+        infile.read(&ch, sizeof(char));
+        ++frequencies[ch];
+    }
+
+    infile.seekg(0);
+
     return true;
 }
 
-void Huffman::write_decode(const char *output, INode *root) {
-    std::ofstream outfile(output, std::ofstream::binary | std::ofstream::out);
-    if (!outfile.is_open()) {
-        throw std::runtime_error("invalidate output file");
+void Huffman::write_encode(std::ifstream &infile, std::ofstream &outfile, HuffmanTableType &huffman_table) {
+    /* write frequencies table */
+    ushort_t size_huffman_table = static_cast<ushort_t>(huffman_table.size());
+    outfile.write(reinterpret_cast<char *>(&size_huffman_table), sizeof(short));
+
+    for (int idx = 0, size = frequencies.size(); idx < size; ++idx) {
+        if (frequencies[idx]) {
+            outfile.write(reinterpret_cast<char *>(&idx), sizeof(char));
+            outfile.write(reinterpret_cast<char *>(&frequencies[idx]), sizeof(int));
+            supporting_data += 1;
+        }
     }
-    outfile.close();
+
+    // size supporting data
+    supporting_data = sizeof(short) + supporting_data * (sizeof(int) + sizeof(char));
+
+    /* write text */
+    const int size_ulong = 32;
+    ulong_t number_for_write = 0;
+    std::bitset<size_ulong> ulong;
+
+    std::vector<bool> bits_text;
+    bits_text.reserve(6 * 8 * 1024 * 1024);
+
+    // fill bits_text
+    char ch = 0;
+    HuffmanTableType::iterator iter_table;
+    for (size_t i = 0; i < input_data; ++i) {
+        infile.read(&ch, sizeof(char));
+        iter_table = huffman_table.find(ch);
+        for (bool bit : iter_table->second) {
+            bits_text.push_back(bit);
+        }
+    }
+
+    ulong_t size_bits_text = static_cast<ulong_t>(bits_text.size());
+    outfile.write(reinterpret_cast<char *>(&size_bits_text), sizeof(ulong_t));
+
+    for (ulong_t i = 0, j = 0; i < size_bits_text; ++i, ++j) {
+        ulong[j] = bits_text[i];
+        if (j == size_ulong - 1) {
+            number_for_write = ulong.to_ulong();
+            outfile.write(reinterpret_cast<char *>(&number_for_write), sizeof(ulong_t));
+            ulong.reset();
+            j = 0;
+        }
+    }
+    number_for_write = ulong.to_ulong();
+    outfile.write(reinterpret_cast<char *>(&number_for_write), sizeof(ulong_t));
+
+    //get_size_of_file(outfile, input_data);
 }
 
-void Huffman::file_decode(const char *input, const char *output) {
-    if (read_decode(input)) {
-        int size_tree = 0;
-        INode *root = build_tree(size_tree);
-
-        write_decode(output, root);
-        delete root;
+void Huffman::file_decode() {
+    if (!(infile.is_open() && outfile.is_open())) {
+        throw std::runtime_error("invalidate file");
     }
-    print_data();
+
+    if (read_decode(infile)) {
+        INode *root = nullptr;
+        build_tree(root);
+
+        write_decode(infile, outfile, root);
+    }
+}
+
+bool Huffman::read_decode(std::ifstream &infile) {
+    get_size_of_file(infile, input_data);
+    if (!input_data) {
+        return false;
+    }
+
+    /* read frequencies table */
+    ushort_t size_huffman_table = 0;
+    infile.read(reinterpret_cast<char *>(&size_huffman_table), sizeof(short));
+
+    char ch = 0;
+    int count = 0;
+    for (ushort_t idx = 0; idx < size_huffman_table; ++idx) {
+        infile.read(&ch, sizeof(char));
+        infile.read(reinterpret_cast<char *>(&count), sizeof(int));
+
+        frequencies[ch] = count;
+        supporting_data += 1;
+    }
+
+    // size supporting data
+    supporting_data = sizeof(short) + supporting_data * (sizeof(int) + sizeof(char));
+
+    return true;
+}
+
+void Huffman::write_decode(std::ifstream &infile, std::ofstream &outfile, INode *root) {
+
 }
 
 /* End of 'huffman.cpp' file */

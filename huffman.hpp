@@ -1,10 +1,11 @@
 #ifndef HUFFMAN_HPP_INCLUDE
 #define HUFFMAN_HPP_INCLUDE
 
+#include <fstream>        // std::ifstream std::ofstream
 #include <vector>
-#include <list>
-#include <map>
 #include <unordered_map>
+
+#define CHAR_BIT 8        // number of bits in a char
 
 struct INode {
     const int f;
@@ -45,47 +46,46 @@ struct NodeCmp {
 
 class Huffman {
 public:
-    Huffman();
+    Huffman(const char *input, const char *output);
 
     ~Huffman();
 
-    void file_encode(const char *input, const char *output);
+    void file_encode();
 
-    void file_decode(const char *input, const char *output);
+    void file_decode();
+
+    void print_data() const;
 
 private:
     typedef std::vector<bool> HuffmanCodeType;
     typedef std::unordered_map<char, HuffmanCodeType> HuffmanTableType;
 
-    std::vector<char> text_buffer;
+    std::ifstream infile;
+    std::ofstream outfile;
 
-    const int unique_symbols;
+    // table frequencies
     std::vector<int> frequencies;
 
     // the original size of the data
-    int input_data;
+    size_t input_data;
 
     // the resulting size of the data
-    int output_data;
+    size_t output_data;
 
     // the size necessary for storing auxiliary data
-    int supporting_data;
+    size_t supporting_data;
 
-    void print_data() const;
+    bool build_tree(INode *&root) const;
 
-    void frequency_count();
+    void build_table(const INode *node, const HuffmanCodeType &prefix, HuffmanTableType &huffman_table) const;
 
-    INode *build_tree(int &size_tree) const;
+    bool read_encode(std::ifstream &infile);
 
-    void build_table(const INode *node, const HuffmanCodeType &prefix, HuffmanTableType & huffman_table) const;
+    void write_encode(std::ifstream &infile, std::ofstream &outfile, HuffmanTableType &huffman_table);
 
-    bool read_encode(const char *input);
+    bool read_decode(std::ifstream &infile);
 
-    void write_encode(const char *output, HuffmanTableType & huffman_table);
-
-    bool read_decode(const char *input);
-
-    void write_decode(const char *output, INode *root);
+    void write_decode(std::ifstream &infile, std::ofstream &outfile, INode *root);
 
 };
 

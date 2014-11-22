@@ -4,11 +4,49 @@
 #include <bitset>
 #include "huffman.hpp"
 
-typedef unsigned long ulong_t;
-typedef unsigned short ushort_t;
+#define CHAR_BIT 8 // number of bits in a char
 
-template<class S>
-inline void get_size_of_file(S &filename, size_t &size_data) {
+typedef unsigned short ushort_t;
+typedef unsigned long ulong_t;
+
+struct INode {
+    const int f;
+
+    virtual ~INode() {
+    }
+
+protected:
+    INode(int f) : f(f) {
+    }
+};
+
+struct InternalNode : public INode {
+    INode *const left;
+    INode *const right;
+
+    InternalNode(INode *c0, INode *c1) : INode(c0->f + c1->f), left(c0), right(c1) {
+    }
+
+    ~InternalNode() {
+        delete left;
+        delete right;
+    }
+};
+
+struct LeafNode : public INode {
+    const char c;
+
+    LeafNode(int f, char c) : INode(f), c(c) {
+    }
+};
+
+struct NodeCmp {
+    bool operator()(const INode *lhs, const INode *rhs) const {
+        return lhs->f > rhs->f;
+    }
+};
+
+inline void get_size_of_file(std::ifstream &filename, size_t &size_data) {
     filename.seekg(0, filename.end);
     size_data = static_cast<size_t>(filename.tellg());
     filename.seekg(0);
@@ -18,8 +56,8 @@ Huffman::Huffman(const char *input, const char *output) :
         infile(input, std::ifstream::binary | std::ifstream::out),
         outfile(output, std::ofstream::binary | std::ofstream::out),
         frequencies(1 << CHAR_BIT),
-        input_data(0),
-        output_data(0),
+        size_infile(0),
+        size_outfile(0),
         supporting_data(0) {
 }
 
@@ -29,8 +67,8 @@ Huffman::~Huffman() {
 }
 
 void Huffman::print_data() const {
-    std::cout << input_data << std::endl;
-    std::cout << output_data << std::endl;
+    std::cout << size_infile << std::endl;
+    std::cout << size_outfile << std::endl;
     std::cout << supporting_data << std::endl;
 }
 
@@ -41,6 +79,8 @@ bool Huffman::build_tree(INode *&root) const {
         if (frequencies[i] != 0)
             trees.push(new LeafNode(frequencies[i], static_cast<char>(i)));
     }
+
+    bool isOne = (trees.size() == 1);
 
     INode *right = nullptr;
     INode *left = nullptr;
@@ -57,7 +97,7 @@ bool Huffman::build_tree(INode *&root) const {
     }
 
     root = trees.top();
-    return trees.size() == 1;
+    return isOne;
 }
 
 void Huffman::build_table(const INode *node, const HuffmanCodeType &prefix, HuffmanTableType &huffman_table) const {
@@ -96,14 +136,14 @@ void Huffman::file_encode() {
 }
 
 bool Huffman::read_encode(std::ifstream &infile) {
-    get_size_of_file(infile, input_data);
-    if (!input_data) {
+    get_size_of_file(infile, size_infile);
+    if (!size_infile) {
         return false;
     }
 
     // read content of input file
     char ch = 0;
-    for (size_t i = 0; i < input_data; ++i) {
+    for (size_t i = 0; i < size_infile; ++i) {
         infile.read(&ch, sizeof(char));
         ++frequencies[ch];
     }
@@ -132,7 +172,6 @@ void Huffman::write_encode(std::ifstream &infile, std::ofstream &outfile, Huffma
     /* write text */
     const int size_ulong = 32;
     ulong_t number_for_write = 0;
-    std::bitset<size_ulong> ulong;
 
     std::vector<bool> bits_text;
     bits_text.reserve(6 * 8 * 1024 * 1024);
@@ -140,7 +179,7 @@ void Huffman::write_encode(std::ifstream &infile, std::ofstream &outfile, Huffma
     // fill bits_text
     char ch = 0;
     HuffmanTableType::iterator iter_table;
-    for (size_t i = 0; i < input_data; ++i) {
+    for (size_t i = 0; i < size_infile; ++i) {
         infile.read(&ch, sizeof(char));
         iter_table = huffman_table.find(ch);
         for (bool bit : iter_table->second) {
@@ -152,20 +191,17 @@ void Huffman::write_encode(std::ifstream &infile, std::ofstream &outfile, Huffma
     outfile.write(reinterpret_cast<char *>(&size_bits_text), sizeof(ulong_t));
 
     int count = 0;
-    for (ulong_t i = 0, j = 0; i < size_bits_text; ++i, ++j) {
-        ulong[j] = bits_text[i];
-        if (j == size_ulong - 1) {
-            number_for_write = ulong.to_ulong();
-            outfile.write(reinterpret_cast<char *>(&number_for_write), sizeof(ulong_t));
-            ulong.reset();
-            j = 0;
-            ++count;
+    for (ulong_t i = 0, j = 0; i != size_bits_text;) {
+        std::bitset<size_ulong> ulong;
+        for (j = 0; j != size_ulong && i != size_bits_text; ++j, ++i) {
+            ulong[j] = bits_text[i];
         }
+        number_for_write = ulong.to_ulong();
+        outfile.write(reinterpret_cast<char *>(&number_for_write), sizeof(ulong_t));
+        ++count;
     }
-    number_for_write = ulong.to_ulong();
-    outfile.write(reinterpret_cast<char *>(&number_for_write), sizeof(ulong_t));
 
-    output_data = supporting_data + sizeof(ulong_t) + (count + 1) * sizeof(ulong_t);
+    size_outfile = supporting_data + sizeof(ulong_t) + count * sizeof(ulong_t);
 }
 
 void Huffman::file_decode() {
@@ -182,8 +218,8 @@ void Huffman::file_decode() {
 }
 
 bool Huffman::read_decode(std::ifstream &infile) {
-    get_size_of_file(infile, input_data);
-    if (!input_data) {
+    get_size_of_file(infile, size_infile);
+    if (!size_infile) {
         return false;
     }
 
@@ -227,21 +263,22 @@ void Huffman::write_decode(std::ifstream &infile, std::ofstream &outfile, INode 
 
     INode *node = root;
     int count = 0;
-    for (std::vector<bool>::iterator it = bits_text.begin(), end = bits_text.end(); it < end; ++it) {
+    for (std::vector<bool>::iterator it = bits_text.begin(), end = bits_text.end(); it < end;) {
         if (const LeafNode *lf = dynamic_cast<const LeafNode *>(node)) {
             outfile.write(&(lf->c), sizeof(char));
-            count += 1;
             node = root;
+            ++count;
+            ++it;
         } else if (const InternalNode *in = dynamic_cast<const InternalNode *>(node)) {
-            if (*it) {
-                node = in->left;
-            } else {
-                node = in->right;
+            node = *it ? in->left : in->right;
+
+            if (dynamic_cast<const InternalNode *>(node)) {
+                ++it;
             }
         }
     }
 
-    output_data = count * sizeof(char);
+    size_outfile = count * sizeof(char);
 }
 
 /* End of 'huffman.cpp' file */

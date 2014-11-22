@@ -5,44 +5,7 @@
 #include <vector>
 #include <unordered_map>
 
-#define CHAR_BIT 8        // number of bits in a char
-
-struct INode {
-    const int f;
-
-    virtual ~INode() {
-    }
-
-protected:
-    INode(int f) : f(f) {
-    }
-};
-
-struct InternalNode : public INode {
-    INode *const left;
-    INode *const right;
-
-    InternalNode(INode *c0, INode *c1) : INode(c0->f + c1->f), left(c0), right(c1) {
-    }
-
-    ~InternalNode() {
-        delete left;
-        delete right;
-    }
-};
-
-struct LeafNode : public INode {
-    const char c;
-
-    LeafNode(int f, char c) : INode(f), c(c) {
-    }
-};
-
-struct NodeCmp {
-    bool operator()(const INode *lhs, const INode *rhs) const {
-        return lhs->f > rhs->f;
-    }
-};
+struct INode;
 
 class Huffman {
 public:
@@ -67,10 +30,10 @@ private:
     std::vector<int> frequencies;
 
     // the original size of the data
-    size_t input_data;
+    size_t size_infile;
 
     // the resulting size of the data
-    size_t output_data;
+    size_t size_outfile;
 
     // the size necessary for storing auxiliary data
     size_t supporting_data;

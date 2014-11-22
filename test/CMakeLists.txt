@@ -56,7 +56,6 @@ elseif (CMAKE_COMPILER_IS_GNUCXX)
 
     # Linker flags
     set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -static" CACHE STRING "" FORCE)
-    set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "" CACHE STRING "" FORCE)   # remove dynamic for C
     set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "" CACHE STRING "" FORCE) # remove dynamic for CXX
     set(BUILD_SHARED_LIBS OFF)
 endif (MSVC)

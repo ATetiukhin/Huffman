@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
         parse_the_command_line(argc, argv, parameter, input_file, output_file);
 
         Huffman compression(input_file, output_file);
-        if (parameter) {
+        if (parameter == 1) {
             compression.file_encode();
         } else {
             compression.file_decode();

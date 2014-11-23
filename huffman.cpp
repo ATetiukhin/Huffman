@@ -6,6 +6,7 @@
 
 #define CHAR_BIT 8 // number of bits in a char
 
+typedef unsigned char uchar_t;
 typedef unsigned short ushort_t;
 typedef unsigned long ulong_t;
 
@@ -34,9 +35,9 @@ struct InternalNode : public INode {
 };
 
 struct LeafNode : public INode {
-    const char c;
+    const uchar_t c;
 
-    LeafNode(int f, char c) : INode(f), c(c) {
+    LeafNode(int f, uchar_t c) : INode(f), c(c) {
     }
 };
 
@@ -77,7 +78,7 @@ bool Huffman::build_tree(INode *&root) const {
 
     for (int i = 0, size = frequencies.size(); i < size; ++i) {
         if (frequencies[i] != 0)
-            trees.push(new LeafNode(frequencies[i], static_cast<char>(i)));
+            trees.push(new LeafNode(frequencies[i], static_cast<uchar_t>(i)));
     }
 
     bool isOne = (trees.size() == 1);
@@ -142,9 +143,9 @@ bool Huffman::read_encode(std::ifstream &infile) {
     }
 
     // read content of input file
-    char ch = 0;
+    uchar_t ch = 0;
     for (size_t i = 0; i < size_infile; ++i) {
-        infile.read(&ch, sizeof(char));
+        infile.read(reinterpret_cast<char *>(&ch), sizeof(char));
         ++frequencies[ch];
     }
 
@@ -227,10 +228,10 @@ bool Huffman::read_decode(std::ifstream &infile) {
     ushort_t size_huffman_table = 0;
     infile.read(reinterpret_cast<char *>(&size_huffman_table), sizeof(short));
 
-    char ch = 0;
+    uchar_t ch = 0;
     int count = 0;
     for (ushort_t idx = 0; idx < size_huffman_table; ++idx) {
-        infile.read(&ch, sizeof(char));
+        infile.read(reinterpret_cast<char *>(&ch), sizeof(char));
         infile.read(reinterpret_cast<char *>(&count), sizeof(int));
 
         frequencies[ch] = count;
@@ -265,7 +266,7 @@ void Huffman::write_decode(std::ifstream &infile, std::ofstream &outfile, INode 
     int count = 0;
     for (std::vector<bool>::iterator it = bits_text.begin(), end = bits_text.end(); it < end;) {
         if (const LeafNode *lf = dynamic_cast<const LeafNode *>(node)) {
-            outfile.write(&(lf->c), sizeof(char));
+            outfile.write(reinterpret_cast<const char *>(&(lf->c)), sizeof(char));
             node = root;
             ++count;
             ++it;

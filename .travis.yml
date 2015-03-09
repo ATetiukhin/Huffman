@@ -1,0 +1,26 @@
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+before_install:
+ - uname -a
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq cmake
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+
+script: make package
+
+after_script:
+  - sudo make install
+  - cqmakedb -v
+  - cd ..
+  - cscope -cbR
+  - ctags --fields=+i -nR
+  - cqmakedb -s cq.db -c cscope.out -t tags -p -d
+  - cqsearch -s cq.db -p 1 -t CODEQUERY_SW_VERSION

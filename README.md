@@ -1,10 +1,5 @@
-Huffman
-=======
-
-[![Build Status](https://travis-ci.org/ATetiukhin/Huffman.svg?branch=master)](https://travis-ci.org/ATetiukhin/Huffman)
-
+Huffman [![Build Status](https://travis-ci.org/ATetiukhin/Huffman.svg?branch=master)](https://travis-ci.org/ATetiukhin/Huffman)
 =============================
-
 Problem statement
 -----------------
 The program performing the two-pass compression with Huffman algorithm.

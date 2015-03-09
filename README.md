@@ -1,8 +1,9 @@
 Huffman
 =======
 
-https://travis-ci.org/ATetiukhin/Huffman.svg?branch=master
+[![Build Status](https://travis-ci.org/ATetiukhin/Huffman.svg?branch=master)](https://travis-ci.org/ATetiukhin/Huffman)
 
+=============================
 
 Problem statement
 -----------------

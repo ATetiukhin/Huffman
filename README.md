@@ -1,6 +1,9 @@
 Huffman
 =======
 
+https://travis-ci.org/ATetiukhin/Huffman.svg?branch=master
+
+
 Problem statement
 -----------------
 The program performing the two-pass compression with Huffman algorithm.
